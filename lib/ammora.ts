@@ -307,6 +307,37 @@ function parseLaunchMetadata(uri: string): { name: string; symbol: string; image
   }
 }
 
+/** Fill in name/symbol from the token contract itself for launches whose
+ * event metadata is missing or unparseable (most launches made outside
+ * GiwaPad carry an empty metadataURI, which is why they showed as
+ * "Unnamed $???"). The factory mints the token with the given name/symbol,
+ * so the on-chain values are authoritative. No multicall on GIWA Sepolia
+ * (multicall3 is not deployed there), so reads run in small batches. */
+async function enrichLaunchNames(
+  client: PublicClient, items: LaunchItem[],
+): Promise<void> {
+  const missing = items.filter(
+    (i) => i.name === "Unnamed" || i.symbol === "???",
+  );
+  const BATCH = 8;
+  for (let i = 0; i < missing.length; i += BATCH) {
+    await Promise.all(
+      missing.slice(i, i + BATCH).map(async (item) => {
+        try {
+          const [name, symbol] = await Promise.all([
+            client.readContract({ address: item.token, abi: erc20Abi, functionName: "name" }),
+            client.readContract({ address: item.token, abi: erc20Abi, functionName: "symbol" }),
+          ]);
+          if (name) item.name = name;
+          if (symbol) item.symbol = symbol;
+        } catch {
+          // keep the metadata fallback ("Unnamed $???")
+        }
+      }),
+    );
+  }
+}
+
 /** Scan recent LaunchCreated events on the auto-route factory (10k-block chunks). */
 export async function scanRecentLaunches(
   client: PublicClient, spanBlocks = 100_000n, chunk = 10_000n,
@@ -335,7 +366,9 @@ export async function scanRecentLaunches(
       // RPC range limits: skip this chunk, keep what we have
     }
   }
-  return items.sort((a, b) => Number(b.blockNumber - a.blockNumber));
+  const found = items.sort((a, b) => Number(b.blockNumber - a.blockNumber));
+  await enrichLaunchNames(client, found);
+  return found;
 }
 
 // ---------------------------------------------------------- curve trading
