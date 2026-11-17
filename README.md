@@ -18,6 +18,12 @@ everything runs in the browser; writes are signed in the user's own wallet.
   creation is free, `poolCreationFee = 0`). Then buy/sell it on its curve
   (`AmmoraV4LaunchCurveClient` + `buildV3NativeSourceExactInputBuy` /
   `planSwapExactInput`).
+  - **One-prompt launch** — describe the token in one sentence and the local
+    idea generator (no API key) proposes name, symbol and description; pick one
+    to launch.
+- **Creator earnings** — your launches with graduation progress (raised vs
+  target) and claimable WETH launch fees from Ammora's FeeVault, with a
+  one-click claim (`buildClaimFeeVaultFor`).
 - **Recent launches** — read live from `LaunchCreated` events on the
   auto-route factory, plus your own launches saved on-device.
 
