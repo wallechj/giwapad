@@ -5,6 +5,7 @@ import { erc20Abi, formatUnits, parseUnits, type Address } from "viem";
 import {
   EXPLORER_URL,
   TAMM,
+  assertTxSuccess,
   buildCurveBuyTx,
   ensureAllowance,
   getCurveState,
@@ -73,21 +74,21 @@ function TradePanel({ launch }: { launch: LaunchItem }) {
         const tx = await buildCurveBuyTx(client, launch.curve, parseUnits(amount, 18), address);
         const hash = await walletClient.sendTransaction({ account: address, to: tx.to, data: tx.data, value: tx.value, chain: walletClient.chain });
         setMsg("Buy sent — waiting for confirmation…");
-        await client.waitForTransactionReceipt({ hash });
+        assertTxSuccess(await client.waitForTransactionReceipt({ hash }));
         setMsg(`Bought ${launch.symbol} ✓`);
       } else {
         const amountIn = parseUnits(amount, decimals);
         const plan = await planCurveSell(client, launch.curve, launch.token, amountIn, address);
         if (plan.approval) {
-          const approveHash = await ensureAllowance(client, walletClient, plan.approval.token, plan.approval.spender, plan.approval.amount);
+          const approveHash = await ensureAllowance(client, walletClient, plan.approval.token, plan.approval.spender, plan.approval.amount, address);
           if (approveHash) {
             setMsg("Approving token spend…");
-            await client.waitForTransactionReceipt({ hash: approveHash });
+            assertTxSuccess(await client.waitForTransactionReceipt({ hash: approveHash }));
           }
         }
         const hash = await walletClient.sendTransaction({ account: address, to: plan.tx.to, data: plan.tx.data, value: plan.tx.value, chain: walletClient.chain });
         setMsg("Sell sent — waiting for confirmation…");
-        await client.waitForTransactionReceipt({ hash });
+        assertTxSuccess(await client.waitForTransactionReceipt({ hash }));
         setMsg(`Sold ${launch.symbol} ✓`);
       }
     } catch (e) {

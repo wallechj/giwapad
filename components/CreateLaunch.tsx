@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Address } from "viem";
 import {
   EXPLORER_URL,
+  assertTxSuccess,
   buildCreateLaunchTx,
   buildMetadataURI,
   getPublicClient,
@@ -77,6 +78,7 @@ export default function CreateLaunch() {
         account: address, to: tx.to, data: tx.data, value: tx.value, chain: walletClient.chain,
       });
       const receipt = await client.waitForTransactionReceipt({ hash });
+      assertTxSuccess(receipt);
       const created = parseCreatedLaunch(receipt);
       const item: LaunchItem = {
         token: created.token as Address,

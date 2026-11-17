@@ -5,6 +5,7 @@ import { formatEther, type Address } from "viem";
 import {
   EXPLORER_URL,
   TAMM,
+  assertTxSuccess,
   buildTammBuyTx,
   buildTammSellTx,
   ensureAllowance,
@@ -79,16 +80,16 @@ export default function SwapCard() {
         hash = await walletClient.sendTransaction({ account: address, to: tx.to, data: tx.data, value: tx.value, chain: walletClient.chain });
       } else {
         const amountIn = parseTamm(amount);
-        const approveHash = await ensureAllowance(client, walletClient, TAMM.token, TAMM.router, amountIn);
+        const approveHash = await ensureAllowance(client, walletClient, TAMM.token, TAMM.router, amountIn, address);
         if (approveHash) {
           setStatus({ kind: "sending", msg: "Approving $tAMM spend… confirm in wallet, then wait" });
-          await client.waitForTransactionReceipt({ hash: approveHash });
+          assertTxSuccess(await client.waitForTransactionReceipt({ hash: approveHash }));
         }
         const tx = await buildTammSellTx(client, amountIn, address);
         hash = await walletClient.sendTransaction({ account: address, to: tx.to, data: tx.data, value: tx.value, chain: walletClient.chain });
       }
       setStatus({ kind: "sending", msg: "Transaction sent — waiting for confirmation…" });
-      await client.waitForTransactionReceipt({ hash: hash as `0x${string}` });
+      assertTxSuccess(await client.waitForTransactionReceipt({ hash: hash as `0x${string}` }));
       setStatus({ kind: "done", msg: direction === "buy" ? "Swap complete — $tAMM received." : "Swap complete — ETH received.", tx: hash });
       void refreshBalances();
     } catch (e) {

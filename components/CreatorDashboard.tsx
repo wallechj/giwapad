@@ -6,6 +6,7 @@ import {
   EXPLORER_URL,
   FEE_VAULT_FALLBACK,
   TAMM,
+  assertTxSuccess,
   buildClaimFeeTx,
   getClaimable,
   getFeeVault,
@@ -98,7 +99,7 @@ export default function CreatorDashboard() {
       const tx = buildClaimFeeTx(TAMM.weth, address, address);
       const hash = await walletClient.sendTransaction({ account: address, to: vault, data: tx.data, chain: walletClient.chain });
       setMsg("Claim sent — waiting for confirmation…");
-      await getPublicClient().waitForTransactionReceipt({ hash });
+      assertTxSuccess(await getPublicClient().waitForTransactionReceipt({ hash }));
       setMsg(`Claimed ${formatUnits(claimable, 18)} WETH ✓`);
       await refreshFees(address);
     } catch (e) {
