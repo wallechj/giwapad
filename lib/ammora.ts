@@ -217,19 +217,34 @@ export async function tokenBalance(
 export async function ensureAllowance(
   client: PublicClient,
   walletClient: WalletClient,
-  token: Address, spender: Address, amount: bigint,
+  token: Address, spender: Address, amount: bigint, owner: Address,
 ): Promise<Hex | null> {
-  const account = walletClient.account;
-  if (!account) throw new Error("Wallet not connected");
+  // NOTE: do not read walletClient.account here — viem's createWalletClient
+  // leaves .account undefined unless set explicitly, which made every sell
+  // throw "Wallet not connected" even while the wallet was connected.
+  // The connected address is passed in as `owner` instead.
   const allowance = await client.readContract({
     address: token, abi: erc20Abi, functionName: "allowance",
-    args: [account.address, spender],
+    args: [owner, spender],
   });
   if (allowance >= amount) return null;
   return walletClient.writeContract({
     address: token, abi: erc20Abi, functionName: "approve",
-    args: [spender, amount], account, chain: giwaSepolia,
+    args: [spender, amount], account: owner, chain: giwaSepolia,
   });
+}
+
+/**
+ * waitForTransactionReceipt resolves even when the tx reverted — a mined
+ * receipt is not a successful swap. Call this after every wait, otherwise
+ * a reverted tx shows a false "Swap complete" message.
+ */
+export function assertTxSuccess(receipt: { status: string }): void {
+  if (receipt.status !== "success") {
+    throw new Error(
+      "Transaction reverted on-chain — nothing was exchanged (likely slippage, try again with a fresh quote).",
+    );
+  }
 }
 
 // --------------------------------------------------------------- launchpad
