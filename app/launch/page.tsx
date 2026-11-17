@@ -10,9 +10,9 @@ export default function LaunchPage() {
           when the curve fills, it graduates to a pool. Your token, your creator role.
         </p>
         <ol className="steps">
-          <li><b>1.</b> Pick a launch config — it sets the curve, fees and graduation rules.</li>
-          <li><b>2.</b> Name your token and sign the launch transaction (free — no creation fee).</li>
-          <li><b>3.</b> Share it: post the token on X and trade it from the home page.</li>
+          <li><b>1.</b> Describe your token in one sentence — or fill in the name and symbol by hand.</li>
+          <li><b>2.</b> Pick a launch config — it sets the curve, fees and graduation rules.</li>
+          <li><b>3.</b> Sign the launch transaction (free — no creation fee), then track your fees on the Creator page.</li>
         </ol>
       </section>
       <CreateLaunch />
